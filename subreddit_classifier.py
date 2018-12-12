@@ -3,16 +3,19 @@
 Date Craeted: December 10th, 2018
 '''
 
+# ------- Imports ------- #
 import pandas as pd
+import Create_Data.UtilFunctions as utils
 from sklearn.utils import shuffle
 from sklearn.preprocessing import LabelEncoder
 from sklearn.linear_model import LogisticRegression
+from sklearn.naive_bayes import MultinomialNB
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
 
+
 # ------- Load Data ------- #
 df = pd.read_csv('https://raw.githubusercontent.com/GiladGecht/DepressionResearch/master/depression_neutral_df.csv')
-
 
 # ------- Data Preprocessing ------- #
 
@@ -23,6 +26,7 @@ perhaps depressed people tend to write way more than a non-depressed person.
 Since removed doesn't imply anything, we'll remove rows which contain such behaviour.
 Eventually, we'll remove any other signs of Nulls in the dataframe.
 '''
+
 df = shuffle(df)
 encoder = LabelEncoder()
 df['_subreddit'] = encoder.fit_transform(df['_subreddit'])
@@ -61,11 +65,11 @@ print(confusion_matrix(y_pred=y_pred,y_true=y_test))
 
 
 # ------- Predict Real Data ------- #
-whole_data = pd.read_csv(r'C:\Users\Gilad\Desktop\Used_Notebooks\SubmissionsDF.csv')
-whole_data = whole_data[whole_data['_subreddit'] != 'depression']
-whole_data = whole_data[whole_data['_subreddit'] != 'AskReddit']
-whole_data = whole_data.reset_index().drop('index', axis=1)
-whole_data['predicted'] = log_reg.predict(whole_data[cols])
+whole_data = pd.read_csv(r'C:\Users\Gilad\Desktop\SubmissionsDF.csv',index_col=0)
+whole_data = utils.clean_data(whole_data)
+whole_data['_predicted'] = log_reg.predict(whole_data[cols])
+print(whole_data['_predicted'].value_counts())
+
 
 # ------- Check Results ------- #
 print("\n")
