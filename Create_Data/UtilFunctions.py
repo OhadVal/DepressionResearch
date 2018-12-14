@@ -17,7 +17,7 @@ import seaborn as sb
 import matplotlib.pyplot as plt
 
 from time import time
-from sklearn.feature_extraction.text import TfidfVectorizer,CountVectorizer,TfidfTransformer
+from sklearn.feature_extraction.text import CountVectorizer,TfidfTransformer
 from urllib3.exceptions import HTTPError
 from datetime import datetime as dt
 
@@ -110,7 +110,7 @@ def clean_data(dataset):
     dataset = dataset[dataset['_subreddit'] != 'depression']
     dataset = dataset[dataset['_subreddit'] != 'AskReddit']
     dataset['_post_text'] = dataset['_post_text'].fillna('')
-    dataset['_post_text'] = dataset[dataset['_post_text'] != '[removed]']
+    dataset = dataset[dataset['_post_text'] != '[removed]']
     dataset = dataset.dropna()
     dataset = dataset.reset_index().drop('index', axis=1)
 
