@@ -5,12 +5,13 @@ Date Craeted: December 10th, 2018
 
 # ------- Imports ------- #
 import pandas as pd
+import numpy as np
 import Create_Data.UtilFunctions as utils
+
 from sklearn.utils import shuffle
 from sklearn.preprocessing import LabelEncoder
-from sklearn.linear_model import LogisticRegression
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.model_selection import train_test_split,cross_val_score
 from sklearn.metrics import confusion_matrix
 from sklearn.svm import LinearSVC
 
@@ -37,47 +38,43 @@ df = df.dropna()
 
 # ------- Splitting Data to Features & Label ------- #
 
-# TODO: For the time being, we created a numerical based classifier
-#       Need to use text preprocessing (CountVectorizer, TfIDF...)
-#       to improve classification
-
-
-numeric_cols = ['_score', '_num_comments', '_title_length', '_comment_karma', '_link_karma',
-        '_upvote_ratio', '_num_words_title',
-        '_post_length', '_num_words_post']
-
 target = '_subreddit'
 cols = '_post_text'
 
 X = df[cols]
 y = df[target]
-X = utils.vector_transformers(X)
+
+count_vect = CountVectorizer(stop_words='english', lowercase=True,analyzer='word')
+X = count_vect.fit_transform(X)
+tfidf_transformer = TfidfTransformer()
+X = tfidf_transformer.fit_transform(X)
+
+
 
 # ------- Splitting to Train & Test ------- #
+
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # ------- Model Training ------- #
 
-# TODO: For the time being, we're using a logistic regression model,
-#       might need to consider Naive Bayes classifiers in the future
-
-svc = LinearSVC()
+svc = LinearSVC(random_state=42, penalty='l2', dual= True, tol=0.0001, C = 1,
+                fit_intercept= True, intercept_scaling=1.0, class_weight= None)
 svc.fit(X_train, y_train)
 y_pred = svc.predict(X_test)
 score = svc.score(X_test, y_test)
 
 # ------- Model Evaluation ------- #
-print("score:",score)
+print("Accuracy Score:",score)
 print(confusion_matrix(y_pred=y_pred,y_true=y_test))
-
+print("AUC Score:", np.mean(cross_val_score(svc, X_train, y_train, cv=5, scoring='roc_auc')))
 
 # ------- Predict Real Data ------- #
-whole_data = pd.read_csv(r'C:\Users\Gilad\Desktop\SubmissionsDF.csv',index_col=0)
+whole_data = pd.read_csv(r'/Users/giladgecht/Desktop/SubmissionsDF.csv',index_col=0)
 whole_data = utils.clean_data(whole_data)
-whole_data['_predicted'] = svc.predict(whole_data[cols])
+whole_data['_predicted'] = svc.predict(count_vect.transform(whole_data[cols]))
 
 # ------- Check Results ------- #
 print("\n")
 for i in range(len(whole_data)):
-        print((whole_data[['_subreddit','predicted']].iloc[i,:]))
+        print((whole_data[['_subreddit','_predicted']].iloc[i,:]))
         print("---------")
