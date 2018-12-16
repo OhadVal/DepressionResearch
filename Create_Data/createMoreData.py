@@ -1,23 +1,24 @@
 import Create_Data.UtilFunctions as utils
 
 
-# TODO: Improve exiting try catch, to prevent future crashes on deleted users...
+# Changed from a recursive function to an infinite loop.
+# thus, no extra memory required.
 
+while True:
 
-def createMoreData():
     reddit = utils.connectToAPI()
     new_subreddit = utils.getNewSubreddit(reddit, 500)
     submissionDF = utils.loadData()
+    print("Current DataFrame Shape:{}".format(submissionDF.shape))
 
-    unique_names = utils.getNames(submissionDF, new_subreddit)  # clear - works
-
-    print(len(unique_names))
+    unique_names = utils.getNames(submissionDF, new_subreddit)
+    print("Number of new users:{}".format(len(unique_names)))
 
     if len(unique_names) == 0:
         print("Going to sleep")
         utils.time.sleep(60 * 20)
         print("Waking up")
-        createMoreData()  # clear - works
+        pass  # clear - works
     else:
 
         topics_dict = {
@@ -35,6 +36,7 @@ def createMoreData():
             "_user_name": [],
         }
 
+        print("Entering Part 1\n")
         for curr_id in unique_names:
             print(curr_id)
             try:
@@ -68,6 +70,3 @@ def createMoreData():
         topics_dict = topics_dict.fillna('')
 
         topics_dict.to_csv('SubmissionsDF2.csv')
-
-
-createMoreData()

@@ -27,7 +27,7 @@ from datetime import datetime as dt
 
 # Load The Data
 def loadData():
-    submissionDF = pd.read_csv((r'C:\Users\Gilad\Desktop\SubmissionsDF.csv'))
+    submissionDF = pd.read_csv(r'C:\Users\Gilad\Desktop\Used_Notebooks\SubmissionsDF.csv')
     submissionDF = submissionDF.drop('Unnamed: 0',axis=1)
     return submissionDF
 

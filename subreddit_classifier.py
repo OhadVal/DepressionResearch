@@ -39,7 +39,7 @@ df = df.dropna()
 # ------- Splitting Data to Features & Label ------- #
 
 target = '_subreddit'
-cols = '_post_text'
+cols = '_title'
 
 X = df[cols]
 y = df[target]
@@ -48,7 +48,6 @@ count_vect = CountVectorizer(stop_words='english', lowercase=True,analyzer='word
 X = count_vect.fit_transform(X)
 tfidf_transformer = TfidfTransformer()
 X = tfidf_transformer.fit_transform(X)
-
 
 
 # ------- Splitting to Train & Test ------- #
@@ -69,12 +68,41 @@ print(confusion_matrix(y_pred=y_pred,y_true=y_test))
 print("AUC Score:", np.mean(cross_val_score(svc, X_train, y_train, cv=5, scoring='roc_auc')))
 
 # ------- Predict Real Data ------- #
-whole_data = pd.read_csv(r'/Users/giladgecht/Desktop/SubmissionsDF.csv',index_col=0)
+whole_data = pd.read_csv(r'C:\Users\Gilad\Desktop\Used_Notebooks\SubmissionsDF.csv',index_col=0)
 whole_data = utils.clean_data(whole_data)
 whole_data['_predicted'] = svc.predict(count_vect.transform(whole_data[cols]))
 
 # ------- Check Results ------- #
-print("\n")
-for i in range(len(whole_data)):
-        print((whole_data[['_subreddit','_predicted']].iloc[i,:]))
-        print("---------")
+
+'''
+Filter out subreddits with less than 50 appearances.
+After filtering, for each subreddit, check the distribution in the classification.
+If the classification tends to fit more to the depression side (over 70% of the classification was 1)
+add to the depression list.
+if the classification tends to be more neutral, i.e over 70% was 0, send to neutral.
+
+CURRENT THRESHOLD = 0.7 
+
+'''
+predicted = whole_data[['_title','_subreddit','_predicted']]
+counts = whole_data['_subreddit'].value_counts()
+popular_subreddits = counts[counts.values >= 50].keys()
+whole_data = whole_data[(whole_data['_subreddit'].isin(popular_subreddits))]
+subreddits = set(whole_data['_subreddit'])
+
+neutral_subreddits = []
+depression_subreddits = []
+THRESHOLD = 0.7
+for i in subreddits:
+    values = whole_data[whole_data['_subreddit'] == i]['_predicted'].value_counts().values
+    sum_values = np.sum(whole_data[whole_data['_subreddit'] == i]['_predicted'].value_counts().values)
+    values_perc = values/sum_values
+    value1 = whole_data[whole_data['_subreddit'] == i]['_predicted'].value_counts().values[0]
+    if whole_data[whole_data['_subreddit'] == i]['_predicted'].value_counts().keys()[0] == 0:
+        if values_perc[0] >= THRESHOLD:
+            neutral_subreddits.append(i)
+    else:
+        if values_perc[0] >= THRESHOLD:
+            depression_subreddits.append(i)
+print("Depression Subreddits:\n", depression_subreddits)
+print("Neutral Subreddits:\n", neutral_subreddits)
