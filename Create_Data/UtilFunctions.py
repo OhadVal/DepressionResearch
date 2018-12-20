@@ -112,7 +112,7 @@ def clean_data(dataset):
     dataset['post_text'] = dataset['post_text'].fillna('')
     dataset = dataset[dataset['post_text'] != '[removed]']
     dataset = dataset.dropna()
-    dataset = dataset.reset_index().drop('index', axis=1)
+    dataset = dataset.reset_index()#.drop('index', axis=1)
 
     return dataset
 

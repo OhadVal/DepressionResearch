@@ -4,20 +4,17 @@ Date Craeted: December 10th, 2018
 '''
 
 # ------- Imports ------- #
-import pandas as pd
-import numpy as np
 import Create_Data.UtilFunctions as utils
 
 from sklearn.utils import shuffle
 from sklearn.preprocessing import LabelEncoder
-from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
 from sklearn.model_selection import train_test_split,cross_val_score
 from sklearn.metrics import confusion_matrix
 from sklearn.svm import LinearSVC
 
 
 # ------- Load Data ------- #
-df = pd.read_csv('https://raw.githubusercontent.com/GiladGecht/DepressionResearch/master/depression_neutral_df.csv')
+df = utils.pd.read_csv('https://raw.githubusercontent.com/GiladGecht/DepressionResearch/master/depression_neutral_df.csv')
 
 # ------- Data Preprocessing ------- #
 
@@ -44,9 +41,9 @@ cols = '_title'
 X = df[cols]
 y = df[target]
 
-count_vect = CountVectorizer(stop_words='english', lowercase=True,analyzer='word')
+count_vect = utils.CountVectorizer(stop_words='english', lowercase=True,analyzer='word')
 X = count_vect.fit_transform(X)
-tfidf_transformer = TfidfTransformer()
+tfidf_transformer = utils.TfidfTransformer()
 X = tfidf_transformer.fit_transform(X)
 
 
@@ -65,12 +62,12 @@ score = svc.score(X_test, y_test)
 # ------- Model Evaluation ------- #
 print("Accuracy Score:",score)
 print(confusion_matrix(y_pred=y_pred,y_true=y_test))
-print("AUC Score:", np.mean(cross_val_score(svc, X_train, y_train, cv=5, scoring='roc_auc')))
+print("AUC Score:", utils.np.mean(cross_val_score(svc, X_train, y_train, cv=5, scoring='roc_auc')))
 
 # ------- Predict Real Data ------- #
-whole_data = pd.read_csv(r'C:\Users\Gilad\Desktop\Used_Notebooks\SubmissionsDF.csv',index_col=0)
+whole_data = utils.pd.read_csv(r'C:\Users\Gilad\PycharmProjects\DepressionResearch\Create_Data\SubmissionsDF.csv',index_col=0)
 whole_data = utils.clean_data(whole_data)
-whole_data['_predicted'] = svc.predict(count_vect.transform(whole_data[cols]))
+whole_data['predicted'] = svc.predict(count_vect.transform(whole_data['title']))
 
 # ------- Check Results ------- #
 
@@ -84,21 +81,21 @@ if the classification tends to be more neutral, i.e over 70% was 0, send to neut
 CURRENT THRESHOLD = 0.7 
 
 '''
-predicted = whole_data[['_title','_subreddit','_predicted']]
-counts = whole_data['_subreddit'].value_counts()
+predicted = whole_data[['title','subreddit','predicted']]
+counts = whole_data['subreddit'].value_counts()
 popular_subreddits = counts[counts.values >= 50].keys()
-whole_data = whole_data[(whole_data['_subreddit'].isin(popular_subreddits))]
-subreddits = set(whole_data['_subreddit'])
+whole_data = whole_data[(whole_data['subreddit'].isin(popular_subreddits))]
+subreddits = set(whole_data['subreddit'])
 
 neutral_subreddits = []
 depression_subreddits = []
 THRESHOLD = 0.7
 for i in subreddits:
-    values = whole_data[whole_data['_subreddit'] == i]['_predicted'].value_counts().values
-    sum_values = np.sum(whole_data[whole_data['_subreddit'] == i]['_predicted'].value_counts().values)
+    values = whole_data[whole_data['subreddit'] == i]['predicted'].value_counts().values
+    sum_values = utils.np.sum(whole_data[whole_data['subreddit'] == i]['predicted'].value_counts().values)
     values_perc = values/sum_values
-    value1 = whole_data[whole_data['_subreddit'] == i]['_predicted'].value_counts().values[0]
-    if whole_data[whole_data['_subreddit'] == i]['_predicted'].value_counts().keys()[0] == 0:
+    value1 = whole_data[whole_data['subreddit'] == i]['predicted'].value_counts().values[0]
+    if whole_data[whole_data['subreddit'] == i]['predicted'].value_counts().keys()[0] == 0:
         if values_perc[0] >= THRESHOLD:
             neutral_subreddits.append(i)
     else:
