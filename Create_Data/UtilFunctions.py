@@ -10,6 +10,7 @@ Title - Analyzing depression symptoms in social media
 # ----------- Imports ----------- #
 import time
 import praw
+import json
 import requests
 import numpy as np
 import pandas as pd
@@ -20,14 +21,14 @@ from time import time
 from sklearn.feature_extraction.text import CountVectorizer,TfidfTransformer
 from urllib3.exceptions import HTTPError
 from datetime import datetime as dt
-
+from elasticsearch import Elasticsearch
 
 # ----------- Helper Functions ----------- #
 
 
 # Load The Data
 def loadData():
-    submissionDF = pd.read_csv(r'C:\Users\Gilad\Desktop\Used_Notebooks\SubmissionsDF.csv')
+    submissionDF = pd.read_csv(r'C:\Users\Gilad\PycharmProjects\DepressionResearch\Create_Data\SubmissionsDF.csv')
     submissionDF = submissionDF.drop('Unnamed: 0',axis=1)
     return submissionDF
 
@@ -115,3 +116,61 @@ def clean_data(dataset):
     dataset = dataset.reset_index().drop('index', axis=1)
 
     return dataset
+
+
+def load_json_data():
+    '''
+    Get a csv file created by the current iteration of "createMoreData".
+    Convert that csv file to a temporary json file, "temp_json.json".
+    open and re-parse it in a way we can upload to elastic => "temp.json"
+    '''
+
+    with open('temp_json.json') as json_data:
+        d = json.load(json_data)
+
+    with open("temp.json", "w") as json_file:
+        json.dump(d, json_file, indent=4)
+        json_file.write("\n")
+
+    json_data = open(r'C:\Users\Gilad\PycharmProjects\DepressionResearch\Create_Data\temp.json').read()
+    data = json.loads(json_data)
+
+    return data
+
+def load_to_elastic(data,index,doc_type,es, counter):
+    '''
+    Iterate through the data file, if the length of the data is larger than 1
+    iterate through the json object and upload each object to elastic.
+    Indexing to the given index with the given doc type
+    '''
+
+
+    counter = counter
+    if len(data) > 1:
+        for d in data.items():
+            temp_list = d[1]
+            es.index(index=index, doc_type=doc_type, id=counter, body=temp_list)
+            counter += 1
+
+    else:
+        es.index(index=index, doc_type='doc_type', id=counter, body=data[1])
+        counter += 1
+
+    es.indices.refresh(index=index)
+
+
+def init_elastic(index, doc_type, elastic_address, index_counter):
+    '''
+    Create the Elasticsearch instance
+    check if the given index exists, if not create one
+    load the given data
+    '''
+
+    es = Elasticsearch(elastic_address) # TODO: Switch localhost to elastic address in the future
+    object = load_json_data()
+
+    if es.indices.exists(index=index):
+        load_to_elastic(data=object, index=index, doc_type=doc_type, es=es, counter=index_counter)
+    else:
+        es.indices.create(index=index, ignore=400)
+        load_to_elastic(data=object, index=index, doc_type=doc_type, es=es, counter=index_counter)

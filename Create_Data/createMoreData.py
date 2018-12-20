@@ -1,13 +1,14 @@
 import Create_Data.UtilFunctions as utils
-
+import pandas as pd
 
 # Changed from a recursive function to an infinite loop.
 # thus, no extra memory required.
-
+index_counter = 1
+i = 1
 while True:
 
     reddit = utils.connectToAPI()
-    new_subreddit = utils.getNewSubreddit(reddit, 500)
+    new_subreddit = utils.getNewSubreddit(reddit, 1)
     submissionDF = utils.loadData()
     print("Current DataFrame Shape:{}".format(submissionDF.shape))
 
@@ -66,7 +67,21 @@ while True:
                                    '_title_length', '_subreddit', '_post_text', '_comment_karma',
                                    '_link_karma', '_upvote_ratio', '_date_created', '_user_name']]
         topics_dict = utils.createMoreFeatures(topics_dict)
+
+        print("Loading to Elasticsearch")
+        topics_dict.to_csv('temp_json.csv')
+        topics_dict = pd.read_csv('temp_json.csv')
+        topics_dict.to_json('temp_json.json', orient='index')
+
+        if i == 1:
+            utils.init_elastic('test', 'test_doc', "http://localhost:9200", i)
+        else:
+            utils.init_elastic('test', 'test_doc', "http://localhost:9200", index_counter)
+        index_counter += topics_dict.shape[0]
+        i += 1
+
+        print("Saving")
         topics_dict = utils.pd.concat([topics_dict, submissionDF], sort=False)
         topics_dict = topics_dict.fillna('')
 
-        topics_dict.to_csv('SubmissionsDF2.csv')
+        topics_dict.to_csv('SubmissionsDF.csv')
