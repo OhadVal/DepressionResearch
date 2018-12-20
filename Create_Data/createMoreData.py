@@ -3,12 +3,14 @@ import pandas as pd
 
 # Changed from a recursive function to an infinite loop.
 # thus, no extra memory required.
-index_counter = 1
-i = 1
+
+es = utils.Elasticsearch("http://localhost:9200")
+
+index_counter = es.count(index='test')
 while True:
 
     reddit = utils.connectToAPI()
-    new_subreddit = utils.getNewSubreddit(reddit, 1)
+    new_subreddit = utils.getNewSubreddit(reddit, 2)
     submissionDF = utils.loadData()
     print("Current DataFrame Shape:{}".format(submissionDF.shape))
 
@@ -73,12 +75,14 @@ while True:
         topics_dict = pd.read_csv('temp_json.csv')
         topics_dict.to_json('temp_json.json', orient='index')
 
-        if i == 1:
-            utils.init_elastic('test', 'test_doc', "http://localhost:9200", i)
-        else:
-            utils.init_elastic('test', 'test_doc', "http://localhost:9200", index_counter)
-        index_counter += topics_dict.shape[0]
-        i += 1
+        utils.init_elastic('test', 'test_doc', "http://localhost:9200", index_counter)
+
+        # if index_counter == 0:
+        #     utils.init_elastic('test', 'test_doc', "http://localhost:9200", i)
+        # else:
+        #     utils.init_elastic('test', 'test_doc', "http://localhost:9200", index_counter)
+
+        index_counter = es.count(index='test')
 
         print("Saving")
         topics_dict = utils.pd.concat([topics_dict, submissionDF], sort=False)
