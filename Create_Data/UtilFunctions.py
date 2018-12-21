@@ -28,8 +28,7 @@ from elasticsearch import Elasticsearch
 
 # Load The Data
 def loadData():
-    submissionDF = pd.read_csv(r'SubmissionsDF2.csv')
-    submissionDF = submissionDF.drop('Unnamed: 0', axis=1)
+    submissionDF = pd.read_csv(r'C:\Users\Gilad\PycharmProjects\DepressionResearch\Create_Data\SubmissionsDF.csv')
     return submissionDF
 
 # Connect to reddit's API using Praw
@@ -46,7 +45,7 @@ def connectToAPI():
 
 # Connect to desired subreddit's new section
 def getNewSubreddit(redditInstance, limit):
-    subreddit = redditInstance.subreddit('showerThoughts')
+    subreddit = redditInstance.subreddit('AskReddit')
     new_subreddit = subreddit.new(limit=limit)
 
     return new_subreddit
@@ -58,7 +57,7 @@ def getNewSubreddit(redditInstance, limit):
 # Otherwise, create a temporary DataFrame and concat to existing one.
 
 def getNames(submissions, new_subreddit):
-    list_of_names = list(set(submissions['_user_name'].tolist()))
+    list_of_names = list(set(submissions['user_name'].tolist()))
 
     new_names = {"names": []}
 
@@ -83,13 +82,13 @@ def getNames(submissions, new_subreddit):
 
 # Create new features and alter existing ones for better usage
 def createMoreFeatures(submissionDF):
-    submissionDF['_title_length'] = submissionDF['_title'].apply(lambda x: len(x))
-    submissionDF['_num_words_title'] = submissionDF['_title'].apply(lambda x: len(x.split()))
-    submissionDF['_post_length'] = submissionDF['_post_text'].apply(lambda x: len(x))
-    submissionDF['_num_words_post'] = submissionDF['_post_text'].apply(lambda x: len(x.split()))
-    submissionDF['_date_created'] = submissionDF['_date_created'].apply(lambda x: dt.fromtimestamp(x))
-    submissionDF['_title'] = submissionDF['_title'].apply(lambda x: x.lower())
-    submissionDF['_post_text'] = submissionDF['_post_text'].apply(lambda x: x.lower())
+    submissionDF['title_length'] = submissionDF['title'].apply(lambda x: len(x))
+    submissionDF['num_words_title'] = submissionDF['title'].apply(lambda x: len(x.split()))
+    submissionDF['post_length'] = submissionDF['post_text'].apply(lambda x: len(x))
+    submissionDF['num_words_post'] = submissionDF['post_text'].apply(lambda x: len(x.split()))
+    submissionDF['date_created'] = submissionDF['date_created'].apply(lambda x: dt.fromtimestamp(x))
+    submissionDF['title'] = submissionDF['title'].apply(lambda x: x.lower())
+    submissionDF['post_text'] = submissionDF['post_text'].apply(lambda x: x.lower())
 
     return submissionDF
 
@@ -108,12 +107,12 @@ def vector_transformers(text_column):
 
 # Clean dataset
 def clean_data(dataset):
-    dataset = dataset[dataset['_subreddit'] != 'depression']
-    dataset = dataset[dataset['_subreddit'] != 'AskReddit']
-    dataset['_post_text'] = dataset['_post_text'].fillna('')
-    dataset = dataset[dataset['_post_text'] != '[removed]']
+    dataset = dataset[dataset['subreddit'] != 'depression']
+    dataset = dataset[dataset['subreddit'] != 'AskReddit']
+    dataset['post_text'] = dataset['post_text'].fillna('')
+    dataset = dataset[dataset['post_text'] != '[removed]']
     dataset = dataset.dropna()
-    dataset = dataset.reset_index().drop('index', axis=1)
+    dataset = dataset.reset_index()#.drop('index', axis=1)
 
     return dataset
 
@@ -132,7 +131,7 @@ def load_json_data():
         json.dump(d, json_file, indent=4)
         json_file.write("\n")
 
-    json_data = open(r'/home/ohad/PycharmProjects/DepressionResearch/Create_Data/temp.json').read()
+    json_data = open(r'C:\Users\Gilad\PycharmProjects\DepressionResearch\Create_Data\temp.json').read()
     data = json.loads(json_data)
 
     return data
@@ -144,13 +143,13 @@ def load_to_elastic(data,index,doc_type,es, counter):
     Indexing to the given index with the given doc type
     '''
 
+
     count = counter['count']
     if len(data) > 1:
         for d in data.items():
             temp_list = d[1]
             es.index(index=index, doc_type=doc_type, id=count, body=temp_list)
             count += 1
-
     else:
         es.index(index=index, doc_type='doc_type', id=count, body=data[1])
         count += 1
