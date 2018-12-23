@@ -4,8 +4,8 @@ import pandas as pd
 # Changed from a recursive function to an infinite loop.
 # thus, no extra memory required.
 
-index = 'test'
-doc_type = 'test_doc'
+index = 'reddit'
+doc_type = 'submission'
 es = utils.Elasticsearch("http://localhost:9200")
 if es.indices.exists(index=index):
     index_counter = es.count(index=index)
@@ -16,7 +16,7 @@ else:
 while True:
 
     reddit = utils.connectToAPI()
-    new_subreddit = utils.getNewSubreddit(reddit, 1)
+    new_subreddit = utils.getNewSubreddit(reddit, 250)
     submissionDF = utils.loadData()
     print("Current DataFrame Shape:{}".format(submissionDF.shape))
 
