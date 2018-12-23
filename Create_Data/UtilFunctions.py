@@ -45,7 +45,7 @@ def connectToAPI():
 
 # Connect to desired subreddit's new section
 def getNewSubreddit(redditInstance, limit):
-    subreddit = redditInstance.subreddit('AskReddit')
+    subreddit = redditInstance.subreddit('depression')
     new_subreddit = subreddit.new(limit=limit)
 
     return new_subreddit

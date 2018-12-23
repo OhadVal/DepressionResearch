@@ -20,9 +20,8 @@ else:
     index_counter = es.count(index=index)
 
 count = index_counter['count']
-for d in data.items():
-    es.index(index=index, doc_type=doc_type, id=count, body=d[1])
-    count += 1
 
+for ind in range(count, len(data)):
+    es.index(index=index, doc_type=doc_type, id=ind, body=list(data.values())[ind])
 
 
