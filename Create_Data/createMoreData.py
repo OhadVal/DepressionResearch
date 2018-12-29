@@ -25,7 +25,7 @@ while True:
 
     if len(unique_names) == 0:
         print("Going to sleep")
-        utils.time.sleep(60 * 20)
+        utils.sleep(60 * 20)
         print("Waking up")
         pass  # clear - works
     else:
