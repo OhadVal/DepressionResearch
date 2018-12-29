@@ -91,4 +91,4 @@ print("Saving")
 topics_dict = utils.pd.concat([topics_dict, submissionDF], sort=False)
 topics_dict = topics_dict.fillna('')
 
-topics_dict.to_csv('SubmissionsDF2.csv',index=False)
+topics_dict.to_csv('SubmissionsDF2.csv', index=False)

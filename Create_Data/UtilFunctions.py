@@ -213,6 +213,7 @@ def update_data(dict, df):
 
         if np.isnan(df['post_text'][i]):
             dict['post_text'][i] = ''
+
     return dict
 
 
