@@ -28,7 +28,7 @@ from elasticsearch import Elasticsearch
 
 # Load The Data
 def loadData():
-    submissionDF = pd.read_csv(r'C:\Users\Gilad\PycharmProjects\DepressionResearch\Create_Data\SubmissionsDF.csv')
+    submissionDF = pd.read_csv(r'/home/ohad/PycharmProjects/DepressionResearch/Create_Data/SubmissionsDF2.csv')
     return submissionDF
 
 # Connect to reddit's API using Praw
@@ -45,7 +45,7 @@ def connectToAPI():
 
 # Connect to desired subreddit's new section
 def getNewSubreddit(redditInstance, limit):
-    subreddit = redditInstance.subreddit('depression')
+    subreddit = redditInstance.subreddit('showerthoughts')
     new_subreddit = subreddit.new(limit=limit)
 
     return new_subreddit
@@ -131,7 +131,7 @@ def load_json_data():
         json.dump(d, json_file, indent=4)
         json_file.write("\n")
 
-    json_data = open(r'C:\Users\Gilad\PycharmProjects\DepressionResearch\Create_Data\temp.json').read()
+    json_data = open(r'/home/ohad/PycharmProjects/DepressionResearch/Create_Data/temp.json').read()
     data = json.loads(json_data)
 
     return data
@@ -172,3 +172,58 @@ def init_elastic(index, doc_type, elastic_address, index_counter):
     else:
         es.indices.create(index=index, ignore=400)
         load_to_elastic(data=object, index=index, doc_type=doc_type, es=es, counter=index_counter)
+
+def update_data(dict, df):
+    '''
+    :param dict: all of the user's updated posts from reddit
+    :param df: all of the user's posts from the dataframe
+    :return: dictionary with all of the posts from both sources, updated.
+    '''
+
+    for i in range(df.shape[0]):
+        if df['submission_id'][i] in dict['submission_id']:  # if post exists
+            list_index = dict['submission_id'].index(df['submission_id'][i])
+            if dict['post_text'][list_index] == '[removed]' and df['post_text'][i] != '[removed]':    # if the new version was removed, use the old one.
+                dict['title'][list_index] = df['title'][i]
+                dict['score'][list_index] = df['score'][i]
+                dict['num_comments'][list_index] = df['num_comments'][i]
+                dict['title_length'][list_index] = df['title_length'][i]
+                dict['subreddit'][list_index] = df['subreddit'][i]
+                dict['post_text'][list_index] = df['post_text'][i]
+                dict['link_karma'][list_index] = df['link_karma'][i]
+                dict['upvote_ratio'][list_index] = df['upvote_ratio'][i]
+                dict['date_created'][list_index] = df['date_created'][i]
+                dict['user_name'][list_index] = df['user_name'][i]
+                dict['comment_karma'][list_index] = df['comment_karma'][i]
+
+        # post doesn't exists, add it.
+        else:
+            dict['submission_id'].append(df['submission_id'][i])
+            dict['title'].append(df['title'][i])
+            dict['score'].append(df['score'][i])
+            dict['num_comments'].append(df['num_comments'][i])
+            dict['title_length'].append(df['title_length'][i])
+            dict['subreddit'].append(df['subreddit'][i])
+            dict['post_text'].append(df['post_text'][i])
+            dict['link_karma'].append(df['link_karma'][i])
+            dict['upvote_ratio'].append(df['upvote_ratio'][i])
+            dict['date_created'].append(df['date_created'][i])
+            dict['user_name'].append(df['user_name'][i])
+            dict['comment_karma'].append(df['comment_karma'][i])
+
+        if np.isnan(df['post_text'][i]):
+            dict['post_text'][i] = ''
+    return dict
+
+
+def updateMoreFeatures(submissionDF):
+    submissionDF['title_length'] = submissionDF['title'].apply(lambda x: len(x))
+    submissionDF['num_words_title'] = submissionDF['title'].apply(lambda x: len(x.split()))
+    submissionDF['post_length'] = submissionDF['post_text'].apply(lambda x: len(x))
+    submissionDF['num_words_post'] = submissionDF['post_text'].apply(lambda x: len(x.split()))
+    submissionDF['date_created'] = submissionDF['date_created'].apply(lambda x:
+                                                                      dt.fromtimestamp(x) if not isinstance(x, str) else x)
+    submissionDF['title'] = submissionDF['title'].apply(lambda x: x.lower())
+    submissionDF['post_text'] = submissionDF['post_text'].apply(lambda x: x.lower())
+
+    return submissionDF
