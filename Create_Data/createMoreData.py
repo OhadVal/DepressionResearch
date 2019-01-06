@@ -43,6 +43,7 @@ while True:
             "upvote_ratio": [],
             "date_created": [],
             "user_name": [],
+            "appearance": [],
         }
 
         print("Entering Part 1\n")
@@ -63,6 +64,8 @@ while True:
                     topics_dict['date_created'].append(submission.created_utc)
                     topics_dict['user_name'].append(submission.author)
                     topics_dict['comment_karma'].append(reddit.redditor(userName).comment_karma)
+                    topics_dict['appearance'].append(0)
+
             except Exception as e:
                 print("Error occured with id:{}".format(str(curr_id)))
                 print(e)

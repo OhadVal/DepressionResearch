@@ -4,7 +4,7 @@ HIT - 2018/2019 -  Academic Research Project
 
 Title - Analyzing depression symptoms in social media
 
-@Author - Gilad Gecht, Ohad Valtzer, Alin Eliovich
+@Author - Gilad Gecht, Ohad Valtzer, Aline Eliovich
 '''
 
 # ----------- Imports ----------- #
@@ -173,6 +173,15 @@ def init_elastic(index, doc_type, elastic_address, index_counter):
         es.indices.create(index=index, ignore=400)
         load_to_elastic(data=object, index=index, doc_type=doc_type, es=es, counter=index_counter)
 
+
+
+def addAppearanceFeature(submissionDF):
+    # adds a new column with appearance
+    # Assign new columns to a DataFrame, returning a new object (a copy) with the new columns added to the original ones
+    submissionDF = submissionDF.assign(appearance=pd.Series(data=np.zeros(submissionDF['submission_id'].shape[0])))
+    submissionDF.to_csv('SubmissionsDF2.csv', index=False)
+
+
 def update_data(dict, df):
     '''
     :param dict: all of the user's updated posts from reddit
@@ -180,51 +189,54 @@ def update_data(dict, df):
     :return: dictionary with all of the posts from both sources, updated.
     '''
 
-    for i in range(df.shape[0]):
-        if df['submission_id'][i] in dict['submission_id']:  # if post exists
-            list_index = dict['submission_id'].index(df['submission_id'][i])
-            if dict['post_text'][list_index] == '[removed]' and df['post_text'][i] != '[removed]':    # if the new version was removed, use the old one.
-                dict['title'][list_index] = df['title'][i]
-                dict['score'][list_index] = df['score'][i]
-                dict['num_comments'][list_index] = df['num_comments'][i]
-                dict['title_length'][list_index] = df['title_length'][i]
-                dict['subreddit'][list_index] = df['subreddit'][i]
-                dict['post_text'][list_index] = df['post_text'][i]
-                dict['link_karma'][list_index] = df['link_karma'][i]
-                dict['upvote_ratio'][list_index] = df['upvote_ratio'][i]
-                dict['date_created'][list_index] = df['date_created'][i]
-                dict['user_name'][list_index] = df['user_name'][i]
-                dict['comment_karma'][list_index] = df['comment_karma'][i]
+    indices_to_remove = []
 
-        # post doesn't exists, add it.
+    for i in range(len(dict['submission_id'])):
+
+        if dict['submission_id'][i] in list(df['submission_id']):  # post already exist in DF
+            # check if post was changed and not removed
+            posts = df[
+                df['submission_id'] == dict['submission_id'][i]]  # all posts with submission_id
+            max_appearance = np.max(
+                list(posts['appearance']))
+
+            if post_changed(dict, posts[posts['appearance'] == max_appearance], i) and \
+                    dict['post_text'][i] != '[removed]':
+                dict['appearance'][i] = max_appearance + 1  # new appearance
+
+            else:  # save indices to delete later
+                indices_to_remove.append(i)
         else:
-            dict['submission_id'].append(df['submission_id'][i])
-            dict['title'].append(df['title'][i])
-            dict['score'].append(df['score'][i])
-            dict['num_comments'].append(df['num_comments'][i])
-            dict['title_length'].append(df['title_length'][i])
-            dict['subreddit'].append(df['subreddit'][i])
-            dict['post_text'].append(df['post_text'][i])
-            dict['link_karma'].append(df['link_karma'][i])
-            dict['upvote_ratio'].append(df['upvote_ratio'][i])
-            dict['date_created'].append(df['date_created'][i])
-            dict['user_name'].append(df['user_name'][i])
-            dict['comment_karma'].append(df['comment_karma'][i])
-
-        if np.isnan(df['post_text'][i]):
-            dict['post_text'][i] = ''
+            dict['appearance'][i] = 0
+    # delete unnecessary posts
+    for i in reversed(indices_to_remove):
+        for key in dict:
+            del dict[key][i]
 
     return dict
 
 
-def updateMoreFeatures(submissionDF):
-    submissionDF['title_length'] = submissionDF['title'].apply(lambda x: len(x))
-    submissionDF['num_words_title'] = submissionDF['title'].apply(lambda x: len(x.split()))
-    submissionDF['post_length'] = submissionDF['post_text'].apply(lambda x: len(x))
-    submissionDF['num_words_post'] = submissionDF['post_text'].apply(lambda x: len(x.split()))
-    submissionDF['date_created'] = submissionDF['date_created'].apply(lambda x:
-                                                                      dt.fromtimestamp(x) if not isinstance(x, str) else x)
-    submissionDF['title'] = submissionDF['title'].apply(lambda x: x.lower())
-    submissionDF['post_text'] = submissionDF['post_text'].apply(lambda x: x.lower())
+def post_changed(dict, post, i):
+    '''
+    :param post: last version of the post
+    :return: True if post has been changed, False otherwise
+    '''
 
-    return submissionDF
+    if dict['title'][i].lower() != post['title'][0].lower():
+        return True
+    elif dict['score'][i] != post['score'][0]:
+        return True
+    elif dict['num_comments'][i] != post['num_comments'][0]:
+        return True
+    elif dict['title_length'][i] != post['title_length'][0]:
+        return True
+    elif dict['post_text'][i] != post['post_text'][0]:
+        return True
+    elif dict['link_karma'][i] != post['link_karma'][0]:
+        return True
+    elif dict['upvote_ratio'][i] != post['upvote_ratio'][0]:
+        return True
+    elif dict['comment_karma'][i] != post['comment_karma'][0]:
+        return True
+
+    return False

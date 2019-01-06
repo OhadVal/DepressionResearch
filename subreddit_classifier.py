@@ -65,7 +65,7 @@ print(confusion_matrix(y_pred=y_pred,y_true=y_test))
 print("AUC Score:", utils.np.mean(cross_val_score(svc, X_train, y_train, cv=5, scoring='roc_auc')))
 
 # ------- Predict Real Data ------- #
-whole_data = utils.pd.read_csv(r'C:\Users\Gilad\PycharmProjects\DepressionResearch\Create_Data\SubmissionsDF.csv',index_col=0)
+whole_data = utils.pd.read_csv(r'/home/ohad/PycharmProjects/DepressionResearch/Create_Data/SubmissionsDF2.csv',index_col=0)
 whole_data = utils.clean_data(whole_data)
 whole_data['predicted'] = svc.predict(count_vect.transform(whole_data['title']))
 
