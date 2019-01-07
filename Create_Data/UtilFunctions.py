@@ -177,7 +177,7 @@ def init_elastic(index, doc_type, elastic_address, index_counter):
 
 def addAppearanceFeature(submissionDF):
     # adds a new column with appearance
-    # Assign new columns to a DataFrame, returning a new object (a copy) with the new columns added to the original ones
+    # Assign new columns to a DataFrame, returning a new object (a copy!) with the new columns added to the original ones
     submissionDF = submissionDF.assign(appearance=pd.Series(data=np.zeros(submissionDF['submission_id'].shape[0])))
     submissionDF.to_csv('SubmissionsDF2.csv', index=False)
 

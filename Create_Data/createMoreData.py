@@ -16,7 +16,7 @@ else:
 while True:
 
     reddit = utils.connectToAPI()
-    new_subreddit = utils.getNewSubreddit(reddit, 250)
+    new_subreddit = utils.getNewSubreddit(reddit, 2)
     submissionDF = utils.loadData()
     print("Current DataFrame Shape:{}".format(submissionDF.shape))
 
@@ -45,6 +45,7 @@ while True:
             "user_name": [],
             "appearance": [],
         }
+
 
         print("Entering Part 1\n")
         for curr_id in unique_names:
@@ -76,7 +77,7 @@ while True:
         print("Entering Part 2")
         topics_dict = topics_dict[['submission_id', 'title', 'score', 'num_comments',
                                    'title_length', 'subreddit', 'post_text', 'comment_karma',
-                                   'link_karma', 'upvote_ratio', 'date_created', 'user_name']]
+                                   'link_karma', 'upvote_ratio', 'date_created', 'user_name', 'appearance']]
         topics_dict = utils.createMoreFeatures(topics_dict)
 
         print("Loading to Elasticsearch")
@@ -90,4 +91,4 @@ while True:
         topics_dict = utils.pd.concat([topics_dict, submissionDF], sort=False)
         topics_dict = topics_dict.fillna('')
 
-        topics_dict.to_csv('SubmissionsDF.csv',index=False)
+        topics_dict.to_csv('SubmissionsDF2.csv',index=False)

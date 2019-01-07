@@ -76,7 +76,7 @@ if len(topics_dict) > 0:
     print("Entering Part 2")
     topics_dict = topics_dict[['submission_id', 'title', 'score', 'num_comments',
                                'title_length', 'subreddit', 'post_text', 'comment_karma',
-                               'link_karma', 'upvote_ratio', 'date_created', 'user_name']]
+                               'link_karma', 'upvote_ratio', 'date_created', 'user_name', 'appearance']]
     topics_dict = utils.createMoreFeatures(topics_dict)
 
     print("Loading to Elasticsearch")
