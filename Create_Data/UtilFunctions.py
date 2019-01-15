@@ -194,13 +194,11 @@ def update_data(dict, df):
     for i in range(len(dict['submission_id'])):
 
         if dict['submission_id'][i] in list(df['submission_id']):  # post already exist in DF
-            # check if post was changed and not removed
-            posts = df[
-                df['submission_id'] == dict['submission_id'][i]]  # all posts with submission_id
-            max_appearance = np.max(
-                list(posts['appearance']))
-
-            if post_changed(dict, posts[posts['appearance'] == max_appearance], i) and \
+            posts = df[df['submission_id'] == dict['submission_id'][i]]  # all posts with submission_id
+            max_appearance = np.max(list(posts['appearance']))
+            df_row = posts.loc[posts['appearance'] == max_appearance].index[0] # row of last appearance
+            # check if last version of the post was changed and not removed
+            if post_changed(dict, posts, i, df_row) and \
                     dict['post_text'][i] != '[removed]':
                 dict['appearance'][i] = max_appearance + 1  # new appearance
 
@@ -216,27 +214,23 @@ def update_data(dict, df):
     return dict
 
 
-def post_changed(dict, post, i):
-    '''
-    :param post: last version of the post
-    :return: True if post has been changed, False otherwise
+def post_changed(dict, post, i, post_row):
     '''
 
-    if dict['title'][i].lower() != post['title'][0].lower():
-        return True
-    elif dict['score'][i] != post['score'][0]:
-        return True
-    elif dict['num_comments'][i] != post['num_comments'][0]:
-        return True
-    elif dict['title_length'][i] != post['title_length'][0]:
-        return True
-    elif dict['post_text'][i] != post['post_text'][0]:
-        return True
-    elif dict['link_karma'][i] != post['link_karma'][0]:
-        return True
-    elif dict['upvote_ratio'][i] != post['upvote_ratio'][0]:
-        return True
-    elif dict['comment_karma'][i] != post['comment_karma'][0]:
-        return True
+    :param dict: dictionary with the users posts
+    :param post: last version of the post
+    :param i: index of the current post in dictionary
+    :param post_row: index of the current post in df
+    :return: True if post had been changed, False otherwise
+    '''
+
+
+    for key in dict:
+        if type(dict[key][i]) is str and type(post.loc[post_row][key]) is str:
+            if (dict[key][i].lower()) != (post.loc[post_row][key]).lower():
+                return True
+
+        elif dict[key][i] != post.loc[post_row][key]:
+            return True
 
     return False

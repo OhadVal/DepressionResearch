@@ -3,7 +3,7 @@ import pandas as pd
 
 # Changed from a recursive function to an infinite loop.
 # thus, no extra memory required.
-
+#
 index = 'reddit'
 doc_type = 'submission'
 es = utils.Elasticsearch("http://localhost:9200")
@@ -41,7 +41,6 @@ topics_dict = {
 print("Entering Part 1\n")
 users_list = []
 for curr_id in unique_names:
-    new_submissions = 0
     print(curr_id)
     users_list.append(curr_id)
     print("Number of posts: ", submissionDF['user_name'].value_counts()[curr_id])
