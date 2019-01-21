@@ -3,7 +3,7 @@ import pandas as pd
 
 # Changed from a recursive function to an infinite loop.
 # thus, no extra memory required.
-
+#
 index = 'reddit'
 doc_type = 'submission'
 es = utils.Elasticsearch("http://localhost:9200")
@@ -16,7 +16,7 @@ else:
 while True:
 
     reddit = utils.connectToAPI()
-    new_subreddit = utils.getNewSubreddit(reddit, 2)
+    new_subreddit = utils.getNewSubreddit(reddit, 20)
     submissionDF = utils.loadData()
     print("Current DataFrame Shape:{}".format(submissionDF.shape))
 
@@ -25,7 +25,7 @@ while True:
 
     if len(unique_names) == 0:
         print("Going to sleep")
-        utils.sleep(60 * 20)
+        # utils.sleep(60 * 20)
         print("Waking up")
         pass  # clear - works
     else:
@@ -44,6 +44,7 @@ while True:
             "date_created": [],
             "user_name": [],
             "appearance": [],
+            "text_changed": [],
         }
 
 
@@ -66,6 +67,7 @@ while True:
                     topics_dict['user_name'].append(submission.author)
                     topics_dict['comment_karma'].append(reddit.redditor(userName).comment_karma)
                     topics_dict['appearance'].append(0)
+                    topics_dict['text_changed'].append(0)
 
             except Exception as e:
                 print("Error occured with id:{}".format(str(curr_id)))
@@ -77,7 +79,7 @@ while True:
         print("Entering Part 2")
         topics_dict = topics_dict[['submission_id', 'title', 'score', 'num_comments',
                                    'title_length', 'subreddit', 'post_text', 'comment_karma',
-                                   'link_karma', 'upvote_ratio', 'date_created', 'user_name', 'appearance']]
+                                   'link_karma', 'upvote_ratio', 'date_created', 'user_name', 'appearance', 'text_changed']]
         topics_dict = utils.createMoreFeatures(topics_dict)
 
         print("Loading to Elasticsearch")
@@ -91,4 +93,4 @@ while True:
         topics_dict = utils.pd.concat([topics_dict, submissionDF], sort=False)
         topics_dict = topics_dict.fillna('')
 
-        topics_dict.to_csv('SubmissionsDF2.csv',index=False)
+        topics_dict.to_csv('SubmissionsDF2.csv', index=False)

@@ -175,10 +175,10 @@ def init_elastic(index, doc_type, elastic_address, index_counter):
 
 
 
-def addAppearanceFeature(submissionDF):
+def addNewFeature(submissionDF):
     # adds a new column with appearance
     # Assign new columns to a DataFrame, returning a new object (a copy!) with the new columns added to the original ones
-    submissionDF = submissionDF.assign(appearance=pd.Series(data=np.zeros(submissionDF['submission_id'].shape[0])))
+    submissionDF = submissionDF.assign(text_changed=pd.Series(data=np.zeros(submissionDF['submission_id'].shape[0])))
     submissionDF.to_csv('SubmissionsDF2.csv', index=False)
 
 
@@ -189,27 +189,39 @@ def update_data(dict, df):
     :return: dictionary with all of the posts from both sources, updated.
     '''
 
+    # for user in users_list:
+    #     user_df = df[df['user_name'] == user]
     indices_to_remove = []
-
+    updated_posts = 0
+    new_posts = 0
     for i in range(len(dict['submission_id'])):
-
         if dict['submission_id'][i] in list(df['submission_id']):  # post already exist in DF
             posts = df[df['submission_id'] == dict['submission_id'][i]]  # all posts with submission_id
             max_appearance = np.max(list(posts['appearance']))
-            df_row = posts.loc[posts['appearance'] == max_appearance].index[0] # row of last appearance
+            df_row = posts.loc[posts['appearance'] == max_appearance].index[0]  # row of last appearance
             # check if last version of the post was changed and not removed
-            if post_changed(dict, posts, i, df_row) and \
+            changed = post_changed(dict, posts, i, df_row)
+            if changed[0] and \
                     dict['post_text'][i] != '[removed]':
                 dict['appearance'][i] = max_appearance + 1  # new appearance
+                updated_posts += 1
+                if changed[1]:
+                    dict['text_changed'] = 1
 
-            else:  # save indices to delete later
+
+            else:  # save indices to delete later - nothing changed
                 indices_to_remove.append(i)
         else:
             dict['appearance'][i] = 0
+            new_posts += 1
+
     # delete unnecessary posts
     for i in reversed(indices_to_remove):
         for key in dict:
             del dict[key][i]
+
+    updated_posts -= len(indices_to_remove)
+    print("Posts updated: ", updated_posts, ".  New posts: ", new_posts)
 
     return dict
 
@@ -224,13 +236,26 @@ def post_changed(dict, post, i, post_row):
     :return: True if post had been changed, False otherwise
     '''
 
+    # remove keys that don't need checking
+    keys = list(dict.keys())
+    keys.remove('post_text')
+    keys.remove('text_changed')
+    keys.remove('appearance')
 
-    for key in dict:
+
+    text_changed = False
+    if type(dict['post_text'][i]) is str and type(post.loc[post_row]['post_text']) is str:
+        if (dict['post_text'][i].lower()) != (post.loc[post_row]['post_text']).lower():
+            text_changed = True
+            return True, text_changed
+
+    for key in keys:
         if type(dict[key][i]) is str and type(post.loc[post_row][key]) is str:
             if (dict[key][i].lower()) != (post.loc[post_row][key]).lower():
-                return True
+                return True, text_changed
 
         elif dict[key][i] != post.loc[post_row][key]:
-            return True
+            return True, text_changed
 
-    return False
+    return False, text_changed
+
