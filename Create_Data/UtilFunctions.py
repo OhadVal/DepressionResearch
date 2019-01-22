@@ -206,7 +206,7 @@ def update_data(dict, df):
                 dict['appearance'][i] = max_appearance + 1  # new appearance
                 updated_posts += 1
                 if changed[1]:
-                    dict['text_changed'] = 1
+                    dict['text_changed'][i] = 1
 
 
             else:  # save indices to delete later - nothing changed
