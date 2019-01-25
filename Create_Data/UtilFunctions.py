@@ -174,7 +174,6 @@ def init_elastic(index, doc_type, elastic_address, index_counter):
         load_to_elastic(data=object, index=index, doc_type=doc_type, es=es, counter=index_counter)
 
 
-
 def addNewFeature(submissionDF):
     # adds a new column with appearance
     # Assign new columns to a DataFrame, returning a new object (a copy!) with the new columns added to the original ones
@@ -241,20 +240,28 @@ def post_changed(dict, post, i, post_row):
     keys.remove('post_text')
     keys.remove('text_changed')
     keys.remove('appearance')
-
+    keys.remove('date_created')
 
     text_changed = False
     if type(dict['post_text'][i]) is str and type(post.loc[post_row]['post_text']) is str:
-        if (dict['post_text'][i].lower()) != (post.loc[post_row]['post_text']).lower():
+        dict_post = (dict['post_text'][i]).lower().lstrip().replace("\r", "")
+        df_post = (post.loc[post_row]['post_text']).lower().lstrip().replace("\r", "")
+        if dict_post != df_post:
+            print("post_text changed: ")
+            print("New: ", dict_post, " Old: ", df_post)
             text_changed = True
             return True, text_changed
 
     for key in keys:
         if type(dict[key][i]) is str and type(post.loc[post_row][key]) is str:
-            if (dict[key][i].lower()) != (post.loc[post_row][key]).lower():
+            if (dict[key][i].lower().lstrip().replace("\r", "")) != (post.loc[post_row][key]).lower().lstrip().replace("\r", ""):
+                print(key, " changed: ")
+                print("New: ", dict[key][i].lower().lstrip().replace("\r", ""), " Old: ", (post.loc[post_row][key]).lower().lstrip().replace("\r", ""))
                 return True, text_changed
 
         elif dict[key][i] != post.loc[post_row][key]:
+            print(key," changed: ")
+            print("New: ", dict[key][i], " Old: ", post.loc[post_row][key])
             return True, text_changed
 
     return False, text_changed
