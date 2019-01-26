@@ -25,7 +25,6 @@ from elasticsearch import Elasticsearch
 
 # ----------- Helper Functions ----------- #
 
-
 # Load The Data
 def loadData():
     submissionDF = pd.read_csv(r'/home/ohad/PycharmProjects/DepressionResearch/Create_Data/SubmissionsDF2.csv')
@@ -224,7 +223,6 @@ def update_data(dict, df):
 
 def post_changed(dict, post, i, post_row):
     '''
-
     :param dict: dictionary with the users posts
     :param post: last version of the post
     :param i: index of the current post in dictionary

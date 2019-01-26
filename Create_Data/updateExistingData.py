@@ -25,7 +25,7 @@ print("Number of unique users:{}".format(len(unique_names)))
 
 
 users_list = []
-step = 20
+step = 25
 for i in range(0, len(unique_names), step):
     start = i
     if (i+step) < len(unique_names):
