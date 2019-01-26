@@ -176,10 +176,9 @@ def init_elastic(index, doc_type, elastic_address, index_counter):
 
 def addNewFeature(submissionDF):
     # adds a new column with appearance
-    # Assign new columns to a DataFrame, returning a new object (a copy!) with the new columns added to the original ones
+    # Assign new columns to a DataFrame, returning a new object(a copy!) with the new columns added to the original ones
     submissionDF = submissionDF.assign(text_changed=pd.Series(data=np.zeros(submissionDF['submission_id'].shape[0])))
     submissionDF.to_csv('SubmissionsDF2.csv', index=False)
-
 
 def update_data(dict, df):
     '''
@@ -188,8 +187,6 @@ def update_data(dict, df):
     :return: dictionary with all of the posts from both sources, updated.
     '''
 
-    # for user in users_list:
-    #     user_df = df[df['user_name'] == user]
     indices_to_remove = []
     updated_posts = 0
     new_posts = 0
@@ -244,7 +241,7 @@ def post_changed(dict, post, i, post_row):
 
     text_changed = False
     if type(dict['post_text'][i]) is str and type(post.loc[post_row]['post_text']) is str:
-        dict_post = (dict['post_text'][i]).lower().lstrip().replace("\r", "")
+        dict_post = (dict['post_text'][i]).replace("\r", "")
         df_post = (post.loc[post_row]['post_text']).lower().lstrip().replace("\r", "")
         if dict_post != df_post:
             print("post_text changed: ")
