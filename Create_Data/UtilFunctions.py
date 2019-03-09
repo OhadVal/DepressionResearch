@@ -4,7 +4,7 @@ HIT - 2018/2019 -  Academic Research Project
 
 Title - Analyzing depression symptoms in social media
 
-@Author - Gilad Gecht, Ohad Valtzer, Alin Eliovich
+@Author - Gilad Gecht, Ohad Valtzer, Aline Eliovich
 '''
 
 # ----------- Imports ----------- #
@@ -25,10 +25,9 @@ from elasticsearch import Elasticsearch
 
 # ----------- Helper Functions ----------- #
 
-
 # Load The Data
 def loadData():
-    submissionDF = pd.read_csv(r'C:\Users\Gilad\PycharmProjects\DepressionResearch\Create_Data\SubmissionsDF.csv')
+    submissionDF = pd.read_csv(r'/home/ohad/PycharmProjects/DepressionResearch/Create_Data/SubmissionsDF2.csv')
     return submissionDF
 
 # Connect to reddit's API using Praw
@@ -45,7 +44,7 @@ def connectToAPI():
 
 # Connect to desired subreddit's new section
 def getNewSubreddit(redditInstance, limit):
-    subreddit = redditInstance.subreddit('depression')
+    subreddit = redditInstance.subreddit('showerthoughts')
     new_subreddit = subreddit.new(limit=limit)
 
     return new_subreddit
@@ -131,7 +130,7 @@ def load_json_data():
         json.dump(d, json_file, indent=4)
         json_file.write("\n")
 
-    json_data = open(r'C:\Users\Gilad\PycharmProjects\DepressionResearch\Create_Data\temp.json').read()
+    json_data = open(r'/home/ohad/PycharmProjects/DepressionResearch/Create_Data/temp.json').read()
     data = json.loads(json_data)
 
     return data
@@ -172,3 +171,93 @@ def init_elastic(index, doc_type, elastic_address, index_counter):
     else:
         es.indices.create(index=index, ignore=400)
         load_to_elastic(data=object, index=index, doc_type=doc_type, es=es, counter=index_counter)
+
+
+def addNewFeature(submissionDF):
+    # adds a new column with appearance
+    # Assign new columns to a DataFrame, returning a new object(a copy!) with the new columns added to the original ones
+    submissionDF = submissionDF.assign(text_changed=pd.Series(data=np.zeros(submissionDF['submission_id'].shape[0])))
+    submissionDF.to_csv('SubmissionsDF2.csv', index=False)
+
+def update_data(dict, df):
+    '''
+    :param dict: all of the user's updated posts from reddit
+    :param df: all of the user's posts from the dataframe
+    :return: dictionary with all of the posts from both sources, updated.
+    '''
+
+    indices_to_remove = []
+    updated_posts = 0
+    new_posts = 0
+    for i in range(len(dict['submission_id'])):
+        if dict['submission_id'][i] in list(df['submission_id']):  # post already exist in DF
+            posts = df[df['submission_id'] == dict['submission_id'][i]]  # all posts with submission_id
+            max_appearance = np.max(list(posts['appearance']))
+            df_row = posts.loc[posts['appearance'] == max_appearance].index[0]  # row of last appearance
+            # check if last version of the post was changed and not removed
+            changed = post_changed(dict, posts, i, df_row)
+            if changed[0] and \
+                    dict['post_text'][i] != '[removed]':
+                dict['appearance'][i] = max_appearance + 1  # new appearance
+                updated_posts += 1
+                if changed[1]:
+                    dict['text_changed'][i] = 1
+
+
+            else:  # save indices to delete later - nothing changed
+                indices_to_remove.append(i)
+        else:
+            dict['appearance'][i] = 0
+            new_posts += 1
+
+    # delete unnecessary posts
+    for i in reversed(indices_to_remove):
+        for key in dict:
+            del dict[key][i]
+
+    updated_posts -= len(indices_to_remove)
+    print("Posts updated: ", updated_posts, ".  New posts: ", new_posts)
+
+    return dict
+
+
+def post_changed(dict, post, i, post_row):
+    '''
+    :param dict: dictionary with the users posts
+    :param post: last version of the post
+    :param i: index of the current post in dictionary
+    :param post_row: index of the current post in df
+    :return: True if post had been changed, False otherwise
+    '''
+
+    # remove keys that don't need checking
+    keys = list(dict.keys())
+    keys.remove('post_text')
+    keys.remove('text_changed')
+    keys.remove('appearance')
+    keys.remove('date_created')
+
+    text_changed = False
+    if type(dict['post_text'][i]) is str and type(post.loc[post_row]['post_text']) is str:
+        dict_post = (dict['post_text'][i]).replace("\r", "")
+        df_post = (post.loc[post_row]['post_text']).lower().lstrip().replace("\r", "")
+        if dict_post != df_post:
+            print("post_text changed: ")
+            print("New: ", dict_post, " Old: ", df_post)
+            text_changed = True
+            return True, text_changed
+
+    for key in keys:
+        if type(dict[key][i]) is str and type(post.loc[post_row][key]) is str:
+            if (dict[key][i].lower().lstrip().replace("\r", "")) != (post.loc[post_row][key]).lower().lstrip().replace("\r", ""):
+                print(key, " changed: ")
+                print("New: ", dict[key][i].lower().lstrip().replace("\r", ""), " Old: ", (post.loc[post_row][key]).lower().lstrip().replace("\r", ""))
+                return True, text_changed
+
+        elif dict[key][i] != post.loc[post_row][key]:
+            print(key," changed: ")
+            print("New: ", dict[key][i], " Old: ", post.loc[post_row][key])
+            return True, text_changed
+
+    return False, text_changed
+
